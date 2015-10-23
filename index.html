@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>my promise</title>
+</head>
+<body>
+	<h1>MY Promise</h1>
+	<script src="scripts/promise.js"></script>
+	<script>
+		(function(){
+			var promise = new XPromise(function(resolve, reject){
+				resolve('this is xPromise');
+			});
+			
+			promise = promise.then(function(data){
+				return new XPromise(function(resolve, reject){
+					console.log(data);
+					setTimeout(function(){
+						resolve('this is delay');
+					},1500);
+				});
+			});
+			
+			promise.then(function(data){
+					console.log('delay',data)
+					throw new Error('error msg');
+			}).then(null, function(error){
+				console.log(error.message);
+			});
+			
+			promise.then(function(data){
+				console.log('second' , data);
+			});
+		})();
+	</script>
+</body>
+</html>
