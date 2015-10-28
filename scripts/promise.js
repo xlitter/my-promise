@@ -22,24 +22,38 @@
 				value: void 0
 			};
 
+		function _resolved(value) {
+			try {
+				_handler.call(this, value, fulfilled);
+			} catch (e) {
+				_rejected.call(this, e);
+			}
+		}
+
+		function _rejected(reason) {
+			_handler.call(this, reason, rejected);
+		}
+
 		function _handler(value, status) {
 			var then;
-			
+
 			if (_state.status !== pending) {
-					return;
+				return;
 			}
-			
+
 			if (value === this.promise) {
-					this.reject(new TypeError('Expected promise to be resolved with value other than itself '));
-					return;
+				_rejected.call(this, new TypeError('Expected promise to be resolved with value other than itself '));
+				return;
 			}
 
 			if (isObject(value) || isFunction(value)) {
 				then = value.then;
 			}
 
-			if (isFunction(then)) {
-				then.call(value, this.resolve.bind(this), this.reject.bind(this));
+			if (isFunction(then) && status === fulfilled) {
+				//当value为promise或thenable时,生成一个新的promise
+				//用于确保promise的resolve方法只会执行一次,通过_state._process控制
+				new Promise(then.bind(value)).then(_resolved.bind(this), _rejected.bind(this));
 				return;
 			}
 			//此时仍调用当前对象的_state
@@ -53,19 +67,31 @@
 				messages = _state.messages;
 
 			_state.value = value;
+
 			enqueue(function () {
 				for (len = messages.length; i < len; i++) {
 					messages[i][_state.status](value);
 				}
+				messages.length = 0;
 			});
 		}
 
 		return {
 			resolve: function (value) {
-				_handler.call(this, value, fulfilled);
+				if (_state._process) {
+					return;
+				}
+				_state._process = true;
+
+				_resolved.call(this, value);
 			},
-			reject: function (value) {
-				_handler.call(this, value, rejected);
+			reject: function (reason) {
+				if (_state._process) {
+					return;
+				}
+				_state._process = true;
+
+				_rejected.call(this, reason);
 			},
 			promise: {
 				then: function (onFulfilled, onRejected) {
@@ -82,7 +108,7 @@
 						_rejectFunc = function (value) {
 							try {
 								//onRejected是函数,则下一次使用resolve,而非继续reject
-								isFunction(onRejected) && defer.resolve(onRejected(value)) || defer.reject(value);
+								isFunction(onRejected) ? defer.resolve(onRejected(value)) : defer.reject(value);
 							} catch (e) {
 								defer.reject(e);
 							}
@@ -110,15 +136,17 @@
 
 	function Promise(resolver) {
 		var defer = deferred();
-		resolver(defer.resolve.bind(defer), defer.reject.bind(defer));
+		try{
+			resolver(defer.resolve.bind(defer), defer.reject.bind(defer));
+		}catch(e){
+			defer.reject(e);
+		}
+		
 		return defer.promise;
 
 	}
 
 	Promise.deferred = deferred;
-
-
-
 
 	if (typeof exports !== 'undefined') {
 		if (typeof module !== 'undefined' && module.exports) {
