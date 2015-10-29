@@ -1,4 +1,6 @@
+/*global XPromise */
 (() => {
+	'use strict';
 	var prm1 = new XPromise(function (resolve, reject) {
 
 				resolve('abc');
