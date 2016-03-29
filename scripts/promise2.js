@@ -1,4 +1,4 @@
-(function (global, undefined) {
+(function(global, undefined) {
   'use strict';
 
   var PENDING = 'PENDING',
@@ -54,18 +54,18 @@
     }
 
     if (isFunction(then) && status === FULFILLED) {
-      new Promise(then.bind(value)).then(function (v) {
+      new Promise(then.bind(value)).then(function(v) {
         _resolve(promise, _state, v);
-      }, function (reason) {
+      }, function(reason) {
         _reject(promise, _state, reason)
       });
       return;
     }
     _state.status = status;
     _state.value = value;
-    
+
     // async exec
-    enqueue(function () {
+    enqueue(function() {
       _process(_state);
     });
   }
@@ -107,15 +107,15 @@
       _reject(that, _state, r);
     }
 
-    this.then = function (onFulfilled, onRejected) {
-      return new Promise(function (resolve, reject) {
-        var resolveFunc = function (v) {
+    this.then = function(onFulfilled, onRejected) {
+      return new Promise(function(resolve, reject) {
+        var resolveFunc = function(v) {
           try {
             isFunction(onFulfilled) ? resolve(onFulfilled(v)) : resolve(v);
           } catch (e) {
             reject(e);
           }
-        }, rejectFunc = function (reason) {
+        }, rejectFunc = function(reason) {
           try {
             isFunction(onRejected) ? resolve(onRejected(reason)) : reject(reason);
           } catch (e) {
@@ -130,13 +130,13 @@
           _state.messages.push(handler);
         } else {
           // async exec
-          enqueue(function () {
+          enqueue(function() {
             handler[_state.status](_state.value);
           });
         }
       });
     };
-    
+
     // call resolver
     try {
       resolver(resolve, reject);
@@ -146,21 +146,21 @@
 
   }
 
-  Promise.resolved = Promise.resovle = function (v) {
-    return new Promise(function (resolve) {
+  Promise.resolved = Promise.resovle = function(v) {
+    return new Promise(function(resolve) {
       resolve(v);
     });
   };
 
-  Promise.rejected = Promise.reject = function (reason) {
-    return new Promise(function (resolve, reject) {
+  Promise.rejected = Promise.reject = function(reason) {
+    return new Promise(function(resolve, reject) {
       reject(reason);
     });
   };
 
-  Promise.deferred = function () {
+  Promise.deferred = function() {
     var defer = {};
-    defer.promise = new Promise(function (resolve, reject) {
+    defer.promise = new Promise(function(resolve, reject) {
       defer.resolve = resolve;
       defer.reject = reject;
     });
